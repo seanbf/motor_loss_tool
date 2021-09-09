@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from utils import rpm_2_rads, rms_2_peak, peak_2_rms, inverse_clarke, load_dataframe
+from src.utils import rpm_2_rads, rms_2_peak, peak_2_rms, inverse_clarke, load_dataframe
 
 page_config = st.set_page_config(
                                 page_title              ="Motor Loss Tool", 
