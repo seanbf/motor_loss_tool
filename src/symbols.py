@@ -78,8 +78,39 @@ idc_symbols = [
 
 loss_inv_comp_symbols = [
     "InverterEfficiency_MCP",
-    "InverterEfficiency_IOP"
+    "InverterEfficiency_IOP",
+    " InverterEfficiency_MCP",
+    " InverterEfficiency_IOP"
 ]
+
+ud_rms_symbols = [
+    ' posSpdArbInputData.L2mSensVmt_Vd_IOP',
+    'posSpdArbInputData.L2mSensVmt_Vd_IOP',
+    ' posSpdArbInputData.L2mSensVmt_Vd_MCP',
+    'posSpdArbInputData.L2mSensVmt_Vd_MCP'
+]
+
+uq_rms_symbols = [
+    ' posSpdArbInputData.L2mSensVmt_Vq_IOP',
+    'posSpdArbInputData.L2mSensVmt_Vq_IOP',
+    ' posSpdArbInputData.L2mSensVmt_Vq_MCP',
+    'posSpdArbInputData.L2mSensVmt_Vq_MCP'
+]
+
+id_peak_symbols = [
+    ' tesOutputData.L2mTes_Id.val_IOP',
+    'tesOutputData.L2mTes_Id.val_IOP',
+    ' tesOutputData.L2mTes_Id.val_MCP',
+    'tesOutputData.L2mTes_Id.val_MCP'
+]
+
+iq_peak_symbols = [
+    ' tesOutputData.L2mTes_Iq.val_IOP',
+    'tesOutputData.L2mTes_Iq.val_IOP',
+    ' tesOutputData.L2mTes_Iq.val_MCP',
+    'tesOutputData.L2mTes_Iq.val_MCP'
+]
+
 
 
 def symbol_auto_select(symbols_in, compared_symbols):
