@@ -1,3 +1,4 @@
+from attr import validate
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -71,10 +72,23 @@ st.subheader("Details - *Optional*")
 
 st.markdown("---")
 
-st.subheader("Symbol Configuration")
-st.selectbox("Torque Demanded", columns,  key = "Torque Demanded [Nm]")
-symbol_auto_select(columns, t_demanded_symbols)
+st.header("Configure Sybmols")
+st.write("All signals must be manually selected if auto-select cannot find them.")
 
+st.checkbox("Include MCU Inverter Losses?", key = "Include MCU Inverter Losses", value = True)
+
+st.selectbox(t_measured,list(columns),  key = t_measured, index = symbol_auto_select(columns, t_measured_symbols))
+
+st.selectbox(t_demanded,list(columns), key = t_demanded, index = symbol_auto_select(columns, t_demanded_symbols))
+
+st.selectbox(speed_rpm,list(columns), key = speed_rpm, index = symbol_auto_select(columns, speed_rpm_symbols))
+
+st.selectbox(vdc,list(columns), key = vdc, index = symbol_auto_select(columns, vdc_symbols))
+
+st.selectbox(idc,list(columns), key = idc, index = symbol_auto_select(columns, idc_symbols))
+
+if st.session_state["Include MCU Inverter Losses"] == True:
+    st.selectbox(loss_inv_comp,list(columns), key = loss_inv_comp, index = symbol_auto_select(columns, loss_inv_comp_symbols))
 
 st.markdown("---")
 

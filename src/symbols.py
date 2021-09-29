@@ -1,12 +1,18 @@
+from logging import exception
+
 speed_rpm_symbols = [
     "Transducer_Speed_IOP",
     " Transducer_Speed_IOP",
     "Transducer_Speed_MCP",
     " Transducer_Speed_MCP",
+    "Transducer_Spd_IOP",
+    "Transducer_Spd_MCP",
+    "TransducerSpd_IOP",
+    "TransducerSpd_MCP",
     " tesInputData.L2mPosSpdArb_RotorSpd_IOP",
     "tesInputData.L2mPosSpdArb_RotorSpd_IOP",
     " tesInputData.L2mPosSpdArb_RotorSpd_MCP",
-    "tesInputData.L2mPosSpdArb_RotorSpd_MCP",
+    "tesInputData.L2mPosSpdArb_RotorSpd_MCP"
 ]
 
 t_demanded_symbols = [
@@ -28,14 +34,20 @@ t_measured_symbols = [
         "Transducer_Torque_IOP",
         "Transducer_Torque_MCP",
         "Transducer_Trq_IOP",
-        "Transducer_Trq_MCP"
+        "Transducer_Trq_MCP",
+        "TransducerTrq_IOP",
+        "TransducerTrq_MCP"
 ]
 
-torque_estimated_signals = [
+t_estimated_signals = [
     " tesOutputData.L2mTes_EstTrq.val_MCP",
     "tesOutputData.L2mTes_EstTrq.val_MCP",
     " tesOutputData.L2mTes_EstTrq.val_IOP",
-    "tesOutputData.L2mTes_EstTrq.val_IOP"
+    "tesOutputData.L2mTes_EstTrq.val_IOP",
+    " TesOp_B.L2mTes_EstTrq_MCP",
+    "TesOp_B.L2mTes_EstTrq_MCP",
+    " TesOp_B.L2mTes_EstTrq_IOP",
+    "TesOp_B.L2mTes_EstTrq_IOP"
 ]
 
 vdc_symbols = [
@@ -43,6 +55,10 @@ vdc_symbols = [
     "sensvdcOutputData.L2mSensVdc_Vdc.val_MCP",
     " sensvdcOutputData.L2mSensVdc_Vdc.val_IOP",
     "sensvdcOutputData.L2mSensVdc_Vdc.val_IOP",
+    "tesInputData.L2mSensVdc_Vdc_MCP",
+    " tesInputData.L2mSensVdc_Vdc_MCP",
+    "tesInputData.L2mSensVdc_Vdc_IOP",
+    " tesInputData.L2mSensVdc_Vdc_IOP",
 ]
 
 idc_symbols = [
@@ -54,6 +70,10 @@ idc_symbols = [
     "SensIdcOp_B.L2mSensIdc_IdcPhy_IOP",
     " SensIdcOp_B.L2mSensIdc_IdcPhy_MCP",
     "SensIdcOp_B.L2mSensIdc_IdcPhy_MCP",
+    "tesInputData.L2mSensIdc_Idc_IOP",
+    " tesInputData.L2mSensIdc_Idc_IOP",
+    "tesInputData.L2mSensIdc_Idc_MCP",
+    " tesInputData.L2mSensIdc_Idc_MCP"
 ]
 
 loss_inv_comp_symbols = [
@@ -62,9 +82,13 @@ loss_inv_comp_symbols = [
 ]
 
 
-def symbol_auto_select(data_symbols, compared_symbols):
-    if data_symbols in compared_symbols:
-        found_symbol = data_symbols
-    else:
-        found_symbol = "Not Selected"
-    return found_symbol
+def symbol_auto_select(symbols_in, compared_symbols):
+    
+    for signals in compared_symbols:
+        try:
+            list_index = list(symbols_in).index(signals)
+            break
+        except:
+            list_index = 0
+
+    return list_index
