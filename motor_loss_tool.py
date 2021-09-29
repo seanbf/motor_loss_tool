@@ -2,20 +2,18 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from src.utils import rpm_2_rads, rms_2_peak, peak_2_rms, inverse_clarke, load_dataframe
+from src.symbols import symbol_auto_select,t_demanded_symbols, t_measured_symbols, speed_rpm_symbols, vdc_symbols, idc_symbols, loss_inv_comp_symbols
 
 page_config = st.set_page_config(
                                 page_title              ="Motor Loss Tool", 
                                 page_icon               ="🔻", 
                                 )
 
-st.title("Motor")
-st.title("Loss")
-st.title("Tool")
+st.title("Motor Loss Tool")
 
 st.write("This tool is to be used to calculate motor losses from a provided data set.")
 
 t_demanded      = "Torque Demanded [Nm]"
-t_estimated     = "Torque Estimated [Nm]"
 t_measured      = "Torque Measured [Nm]"
 speed_rpm       = "Speed [rpm]"
 speed_rads      = "Speed [rad/s]"
@@ -43,16 +41,16 @@ pwr_dc          = "DC Power [W]"
 pwr_ac          = "AC Power [W]"
 pwr_ph          = "Phase Power [W]"
 
-
 df = pd.DataFrame()
 
 st.markdown("---")
 
 st.subheader("Upload File(s)")
 st.checkbox("Show first 10 rows as table", key = "Data Head")
-uploaded_file = st.sidebar.file_uploader(   
+
+uploaded_file = st.file_uploader(   
                                         label="",
-                                        accept_multiple_files=True,
+                                        accept_multiple_files=False,
                                         type=['csv', 'xlsx']
                                         )
 
@@ -61,9 +59,7 @@ if uploaded_file is None:
     st.stop()
 
 elif uploaded_file is not None:
-
-    original_file_name  = uploaded_file.name
-
+    st.download_button("Test", data = uploaded_file)
     df, columns  = load_dataframe(uploaded_file=uploaded_file)
 
 if st.session_state["Data Head"] == True:
@@ -72,6 +68,13 @@ if st.session_state["Data Head"] == True:
 st.markdown("---")
 
 st.subheader("Details - *Optional*")
+
+st.markdown("---")
+
+st.subheader("Symbol Configuration")
+st.selectbox("Torque Demanded", columns,  key = "Torque Demanded [Nm]")
+symbol_auto_select(columns, t_demanded_symbols)
+
 
 st.markdown("---")
 
