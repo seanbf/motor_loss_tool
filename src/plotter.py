@@ -247,8 +247,6 @@ def plot_3D(df, x_string, y_string, z_string, x, y, z, chart_type, color_palette
         plot_3D.update_traces(trace_dict)
 
         if (overlay == True) and (chart_type != "3D Scatter" or "Surface") :
-            st.write(x)
-            st.write(y)
             plot_3D.add_trace	(go.Scattergl (  
                             x       		= df[x_string],
                             y       		= df[y_string],

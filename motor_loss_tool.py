@@ -5,8 +5,9 @@ import numpy as np
 from streamlit.state.session_state import SessionState
 from src.utils import rpm_2_rads, rms_2_peak, peak_2_rms, inverse_clarke, load_dataframe, col_removal, determine_transients, sample_transients, transient_removal, eff_pc, round_speeds, spd_trq_grid, loss_tables, mtr_loss_table_code
 from src.symbols import symbol_auto_select,t_demanded_symbols, t_measured_symbols, speed_rpm_symbols, vdc_symbols, idc_symbols, loss_inv_comp_symbols, ud_rms_symbols, uq_rms_symbols, id_peak_symbols ,iq_peak_symbols
-from src.plotter import transient_removal_plot, plot_losses, plot_powers
+from src.plotter import transient_removal_plot, plot_losses, plot_powers, plot_3D
 from src.report import mtr_loss_report_details
+from src.colors import sequential_color_dict, diverging_color_dict, plot_color_set
 
 page_config = st.set_page_config(
                                 page_title              ="Motor Loss Tool", 
@@ -63,7 +64,7 @@ uploaded_file = st.file_uploader(
                                         )
 
 if uploaded_file == []:
-    st.info("Please upload file(s)")
+    st.info("Please upload file(s) that represent one operating quadrant")
     st.stop()
 
 else:
@@ -301,8 +302,299 @@ else:
     st.stop()
 
 Meshgrid_Speed, Meshgrid_Torque, speed_bp, torque_bp = spd_trq_grid(df_formatted_avg, op_quad, speed_rpm, t_measured, st.session_state["Max Motor Speed"], st.session_state["Max Motor Torque"], speed_bp, torque_bp, st.session_state["Speed Threshold"], st.session_state["Torque Threshold"])
-Loss_Inv_Table, Loss_Mtr_Table, Loss_Sys_Table = loss_tables(df_formatted_avg, speed_bp, torque_bp, Meshgrid_Speed, Meshgrid_Torque, speed_round, t_measured, loss_inv, loss_mtr_comp, loss_sys)
+st.markdown("---") 
+
+st.header("Losses")
+
+fill_table_val, fill_table_method = st.columns(2)
+fill_table_val.selectbox("Fill", ["NaN", "0"], key = "Fill Table Value" )
+fill_table_method.selectbox("Method", ["linear", "nearest", "cubic"], key = "Fill Table Method" )
+Loss_Inv_Table, Loss_Mtr_Table, Loss_Sys_Table = loss_tables(df_formatted_avg, speed_bp, torque_bp, Meshgrid_Speed, Meshgrid_Torque, speed_round, t_measured, loss_inv, loss_mtr_comp, loss_sys, st.session_state["Fill Table Method"], st.session_state["Fill Table Value"])
+
+st.subheader("Tables")
+st.write("Inverter Loss Table")
+Loss_Inv_Table_display = pd.DataFrame(index=torque_bp, columns=speed_bp, data=Loss_Inv_Table)
+st.write(Loss_Inv_Table_display)
+
+st.write("Motor Loss Table")
+Loss_Mtr_Table_display = pd.DataFrame(index=torque_bp, columns=speed_bp, data=Loss_Mtr_Table)
+st.write(Loss_Mtr_Table_display)
+
+st.write("System Loss Table")
+Loss_Sys_Table_display = pd.DataFrame(index=torque_bp, columns=speed_bp, data=Loss_Sys_Table)
+st.write(Loss_Sys_Table_display)
+
+st.subheader("Plots")
+
+plot_types, color_scales, color_maps, color_pre = st.columns(4)
+plot_types.selectbox("Chart Type", ["Contour", "Surface","Heatmap","3D Scatter"], key = "Chart Type" )
+
+color_scales.selectbox("Color Scale", ["Sequential", "Diverging"], key = "Color Scale" )
+
+if st.session_state["Color Scale"] == 'Sequential':
+    color_map = list(sequential_color_dict().keys())
+else:
+    color_map = list(diverging_color_dict().keys())
+
+color_maps.selectbox("Color Map", color_map, key = "Color Map" )
+if  st.session_state["Color Scale"] == 'Sequential':
+    color_palette = sequential_color_dict().get(st.session_state["Color Map"])
+else:
+    color_palette = diverging_color_dict().get(st.session_state["Color Map"])
+
+colormap_preview = plot_color_set(color_palette, st.session_state["Color Map"])
+color_pre.image(colormap_preview, use_column_width = True)
+
+st.subheader("Data Overlay")
+if st.checkbox("Show Data Overlayed"):
+    overlay = True
+else:
+    overlay = False
+
+t_d_error_nm_ovr1, t_d_error_nm_ovr2 = st.columns(2)
+t_d_error_nm_ovr1.slider("Opacity",value=0.5,min_value=0.0, max_value=1.0, step=0.01, key = "Overlay Alpha")
+t_d_error_nm_ovr2.color_picker("Overlay Color", key = "Overlay Color")
+
+st.checkbox("Plot Inverter Losses", key = "Plot Inverter Losses")
+st.checkbox("Plot Motor Losses", key = "Plot Motor Losses")
+st.checkbox("Plot System Losses", key = "Plot System Losses" )
+
+if st.session_state["Plot Inverter Losses"] == True:
+    loss_inv_plot = plot_3D(df_formatted_avg, speed_round, t_demanded, loss_inv, speed_bp, torque_bp, Loss_Inv_Table, st.session_state["Chart Type"], color_palette, overlay, st.session_state["Overlay Alpha"], st.session_state["Overlay Color"])
+    st.plotly_chart(loss_inv_plot)
+    loss_inv_html_string = '''<br><h4> Inverter Losses [W] ''' + str(st.session_state["Chart Type"]) + ''' </h4>'''
+    loss_inv_html_plot = loss_inv_plot.to_html(default_width = "1200px",default_height = "720px")
+else:
+    loss_inv_html_string = ""
+    loss_inv_html_plot = ""
+
+if st.session_state["Plot Motor Losses"] == True:
+    loss_mtr_plot = plot_3D(df_formatted_avg, speed_round, t_demanded, loss_mtr, speed_bp, torque_bp, Loss_Mtr_Table, st.session_state["Chart Type"], color_palette, overlay, st.session_state["Overlay Alpha"], st.session_state["Overlay Color"])
+    st.plotly_chart(loss_mtr_plot)
+    loss_mtr_html_string = '''<br><h4> Motor Losses [W] ''' + str(st.session_state["Chart Type"]) + ''' </h4>'''
+    loss_mtr_html_plot = loss_mtr_plot.to_html(default_width = "1200px",default_height = "720px")
+else:
+    loss_mtr_html_string = ""
+    loss_mtr_html_plot = ""
+
+if st.session_state["Plot System Losses"] == True:
+    loss_sys_plot = plot_3D(df_formatted_avg, speed_round, t_demanded, loss_sys, speed_bp, torque_bp, Loss_Sys_Table, st.session_state["Chart Type"], color_palette, overlay, st.session_state["Overlay Alpha"], st.session_state["Overlay Color"])
+    st.plotly_chart(loss_sys_plot)
+    loss_sys_html_string = '''<br><h4> System Losses [W] ''' + str(st.session_state["Chart Type"]) + ''' </h4>'''
+    loss_sys_html_plot = loss_sys_plot.to_html(default_width = "1200px",default_height = "720px")
+else:
+    loss_sys_html_string = ""
+    loss_sys_html_plot = ""
+
+
+st.subheader("Code")
 
 Loss_Mtr_Table_Code = mtr_loss_table_code(Loss_Mtr_Table)
+with st.expander("Motor Loss Table [Code Formatted]"):
+    st.text_area(label = "", value = Loss_Mtr_Table_Code, height = 720, help = "Ctrl+A in the text area and copy to the relevent location.")
 
-st.write(Loss_Mtr_Table_Code)
+st.header("Report")
+test_dict = mtr_loss_report_details()
+
+st.header("Report Appendix Items")
+st.checkbox("Include non-averaged dataset", key = "Report Appendix Full Dataset")
+
+if st.session_state["Report Appendix Full Dataset"] == True:
+    report_appendix_full = '''
+    <br><h4>Full Dataset Table</h4>
+    <br><p>The below table contains all the data uploaded,selected and formatted.</p>
+    <br>'''+ df_formatted.to_html().replace('<table border="1" class="dataframe">','<table class="table table-sm">') +'''
+    '''
+else: 
+    report_appendix_full = ""
+
+files = []
+for file in uploaded_file:
+    files.append(file.name)
+
+if st.session_state["Remove Transients"] == True:
+    transient_removal_html = ''' 
+    <p>Dwell Period: '''+str(st.session_state["Dwell Period"])+'''</p>'''+'''
+    <p>Torque Demanded Filter : '''+str(st.session_state["Torque Demanded Filter"])+''' Nm </p>'''
+
+else:
+    transient_removal_html = ''' 
+    <p>Not applied</p>
+    '''
+
+if (st.session_state["Chart Type"] == "Contour") and ((st.session_state["Plot Inverter Losses"] == True) or (st.session_state["Plot Motor Losses"] == True) or (st.session_state["Plot Motor Losses"] == True)):
+    plot_info = '''The below contour plot(s) shows Torque against speed rounded (to the nearest: ''' + str(st.session_state["Speed Base"]) + ''' rpm) 
+    <br>Data between measured data points have been interpolated between the nearest available data using the '''+ str(st.session_state["Chart Type"])+''' method.
+    <br>Missing data has been filled with the following value: ''' + str(st.session_state["Fill Table Value"])+'''
+    '''
+
+elif (st.session_state["Chart Type"] == "Surface") and ((st.session_state["Plot Inverter Losses"] == True) or (st.session_state["Plot Motor Losses"] == True) or (st.session_state["Plot Motor Losses"] == True)):
+    plot_info = '''The below surface plot(s) shows Torque against speed rounded (to the nearest: ''' + str(st.session_state["Speed Base"]) + ''' rpm) and Torque error
+    <br>Data between measured data points have been interpolated between the nearest available data using the '''+ str(st.session_state["Chart Type"])+''' method.
+    <br>Missing data has been filled with the following value: ''' + str(st.session_state["Fill Table Value"])+'''
+    '''
+
+elif (st.session_state["Chart Type"] == "Heatmap") and ((st.session_state["Plot Inverter Losses"] == True) or (st.session_state["Plot Motor Losses"] == True) or (st.session_state["Plot Motor Losses"] == True)):
+    plot_info = '''The below heatmap plot(s) shows Torque against speed rounded (to the nearest: ''' + str(st.session_state["Speed Base"]) + ''' rpm)
+    <br>Data between measured data points have been interpolated between the nearest available data using the '''+ str(st.session_state["Chart Type"])+''' method.
+    <br>Missing data has been filled with the following value: ''' + str(st.session_state["Fill Table Value"])+'''
+    '''
+
+elif (st.session_state["Chart Type"] == "Scatter 3D") and ((st.session_state["Plot Inverter Losses"] == True) or (st.session_state["Plot Motor Losses"] == True) or (st.session_state["Plot Motor Losses"] == True)):
+    plot_info = '''The below 3D Scatter plot(s) shows Torque against speed rounded (to the nearest: ''' + str(st.session_state["Speed Base"]) + ''' rpm) and Losses'''
+
+else:
+     plot_info = ""
+
+input_files_table = pd.DataFrame(files)
+input_files_table = input_files_table.to_html(header=False).replace('<table border="1" class="dataframe">','<table class="table table-borderless table-sm table-hover">')
+
+test_detail = {
+    "Test Name"                 : st.session_state["Test Name"],
+    "User"                      : st.session_state["User"],
+    "Test Date"                 : st.session_state["Test Date"],
+    "Test Note"                 : st.session_state["Test Note"]
+}
+
+dyno_detail = {
+    "Dyno"                      : st.session_state["Dyno"],
+    "Torque Speed Sensor"       : st.session_state["Torque Speed Sensor"],
+    "Sensor Calibration Date"   : st.session_state["Sensor Calibration Date"]
+}
+
+software_detail = {
+    "Software Level"            : st.session_state["Software Level"],
+    "Software Location"         : st.session_state["Software Location"],
+    "Software Notes"            : st.session_state["Software Notes"]
+}
+
+controller_detail = {
+    "Controller Manufacturer"   : st.session_state["Controller Manufacturer"],
+    "Controller Model"          : st.session_state["Controller Model"],
+    "Controller Sample"         : st.session_state["Controller Sample"],
+    "Controller Notes"          : st.session_state["Controller Notes"]
+}
+
+motor_detail = {
+    "Motor Manufacturer"        : st.session_state["Motor Manufacturer"],
+    "Motor Model"               : st.session_state["Motor Model"],
+    "Motor Sample"              : st.session_state["Motor Sample"],
+    "Motor Notes"               : st.session_state["Motor Notes"]
+
+}
+
+
+test_detail_table = pd.DataFrame.from_dict(test_detail,orient='index')
+test_detail_table = test_detail_table.to_html(header=False, classes='table text-left', justify='left', border="0")
+
+dyno_detail_table = pd.DataFrame.from_dict(dyno_detail,orient='index')
+dyno_detail_table = dyno_detail_table.to_html(header=False, classes='table text-left', justify='left', border="0")
+
+software_detail_table = pd.DataFrame.from_dict(software_detail,orient='index')
+software_detail_table = software_detail_table.to_html(header=False, classes='table text-left', justify='left', border="0")
+
+controller_detail_table = pd.DataFrame.from_dict(controller_detail,orient='index')
+controller_detail_table = controller_detail_table.to_html(header=False, classes='table text-left', justify='left', border="0")
+
+motor_detail_table = pd.DataFrame.from_dict(motor_detail,orient='index')
+motor_detail_table = motor_detail_table.to_html(header=False, classes='table text-left', justify='left', border="0")
+
+html_string = '''
+<html>
+    <head>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        <style>body{ margin:100 100; background:white; }</style>
+    </head>
+    <body>
+        <div class="container h-10">
+            <div class="row h-10 justify-content-center align-items-center">
+            <img src="https://turntide.com/wp-content/themes/turntide2021/theme/static/images/logo-color.svg" style="width: 400px" />
+            <br>
+            </div>
+        </div>
+
+        <h1 class="text-center">Motor Loss Results</h1>
+
+        <br>
+
+        <!-- *** Section 1 *** --->
+        <h2>Report Details</h2>
+        <br>
+            <h4>Testing</h4>
+                '''+ test_detail_table +'''
+                <br>
+
+            <h4>Software</h4>
+                '''+ software_detail_table +'''
+                <br>
+
+            <h4>Motor</h4>
+                '''+ motor_detail_table +'''
+                <br>
+
+            <h4>Controller</h4>
+                '''+ controller_detail_table +'''
+                <br>
+
+            <h4>Dyno</h4>
+                '''+ dyno_detail_table +'''
+                <br>
+
+            <!-- *** Section 2 *** --->
+            <h2>Input Files</h2>
+                '''+ input_files_table +'''
+                <br>
+
+            <h2>Transient Removal</h2> 
+                '''+ transient_removal_html +'''
+                '''+ transient_removal_sample_plot.to_html(default_width = "1200px",default_height = "720px") +'''
+                <br>
+
+            <h2>Unique Points</h2>
+                <p>There are '''+ str(number_of_rounded_speeds)+''' unique speed points identified.</p>
+                <br>
+            <!-- *** Section 4 *** --->
+            <h2>Loss Tables</h2>
+            <h4>Inverter Loss Table</h4>
+            '''+ Loss_Inv_Table_display.to_html().replace('<table border="1" class="dataframe">','<table class="table table-striped table-sm">') + '''
+            <br>
+            <h4>Motor Loss Table</h4>
+            '''+ Loss_Mtr_Table_display.to_html().replace('<table border="1" class="dataframe">','<table class="table table-striped table-sm">') + '''
+            <br>
+            <h4>System Loss Table</h4>
+            '''+ Loss_Sys_Table_display.to_html().replace('<table border="1" class="dataframe">','<table class="table table-striped table-sm">') + '''
+
+        <!-- *** Section 4 *** --->
+        <br>
+        <h2>Plots</h2>
+            <p>Selected plots will appear here.</p>          
+            ''' + plot_info + '''
+            ''' + loss_inv_html_string + '''
+            ''' + loss_inv_html_plot + '''
+            ''' + loss_mtr_html_string + '''
+            ''' + loss_mtr_html_plot + '''
+            ''' + loss_sys_html_string + '''
+            ''' + loss_sys_html_plot + '''
+        <!-- *** Section 4 *** --->
+        <br>
+        <h2>Appendix</h2>
+            <br>
+            <h4>Code C Formatted</h4>
+            '''+ Loss_Mtr_Table_Code + '''
+            <br>
+            <h4>Data analysed as Table</h4> 
+            ''' + df_formatted_avg.to_html().replace('<table border="1" class="dataframe">','<table class="table table-striped table-sm">') + '''
+            <br>
+            ''' + report_appendix_full + '''
+    </body>
+</html>
+'''
+
+bl, report_col ,br = st.columns(3)
+
+report_col.download_button(
+    label="Download Report",
+    data=html_string,
+    file_name="motor_loss.html",
+    mime="application/octet-stream"
+)

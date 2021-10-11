@@ -205,19 +205,19 @@ def spd_trq_grid(df, op_quad, speed_rpm, t_measured, max_mtr_spd, max_mtr_trq, s
 
     return Meshgrid_Speed, Meshgrid_Torque, speed_bp, torque_bp
 
-def loss_tables(df, speed_bp, torque_bp, Meshgrid_Speed, Meshgrid_Torque, speed_round, t_measured, loss_inv, loss_mtr_comp, loss_sys):
+def loss_tables(df, speed_bp, torque_bp, Meshgrid_Speed, Meshgrid_Torque, speed_round, t_measured, loss_inv, loss_mtr_comp, loss_sys, method, fill):
     # Inverter losses
-    Loss_Inv_Grid       = griddata( df.loc[ :, [speed_round,t_measured] ], df[loss_inv], (Meshgrid_Speed, Meshgrid_Torque), method="linear" )
+    Loss_Inv_Grid       = griddata( df.loc[ :, [speed_round,t_measured] ], df[loss_inv], (Meshgrid_Speed, Meshgrid_Torque), method=method,fill_value=fill)
     Loss_Inv_Table      = Loss_Inv_Grid[:, speed_bp]
     Loss_Inv_Table      = Loss_Inv_Table[torque_bp, :]
 
     # Motor losses
-    Loss_Mtr_Grid       = griddata( df.loc[ :, [speed_round,t_measured] ], df[loss_mtr_comp], (Meshgrid_Speed, Meshgrid_Torque), method="linear" )
+    Loss_Mtr_Grid       = griddata( df.loc[ :, [speed_round,t_measured] ], df[loss_mtr_comp], (Meshgrid_Speed, Meshgrid_Torque), method=method,fill_value=fill )
     Loss_Mtr_Table      = Loss_Mtr_Grid[:, speed_bp]
     Loss_Mtr_Table      = Loss_Mtr_Table[torque_bp, :]
 
     # System losses
-    Loss_Sys_Grid       = griddata( df.loc[ :, [speed_round,t_measured] ], df[loss_sys], (Meshgrid_Speed, Meshgrid_Torque), method="linear" )
+    Loss_Sys_Grid       = griddata( df.loc[ :, [speed_round,t_measured] ], df[loss_sys], (Meshgrid_Speed, Meshgrid_Torque), method=method,fill_value=fill )
     Loss_Sys_Table      = Loss_Sys_Grid[:, speed_bp]
     Loss_Sys_Table      = Loss_Sys_Table[torque_bp, :]
 

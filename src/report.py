@@ -375,23 +375,4 @@ def mtr_loss_report_details():
     motor_field.selectbox("Sample", samples, key = "Motor Sample")
     motor_field.text_area("Notes", key = "Motor Notes")
 
-    #Motors
-    motor_field.subheader("Motor")
-    motor_field.selectbox("Manufacturer", motor_manufactures, key = "Motor Manufacturer")
-
-    if st.session_state["Motor Manufacturer"] == 'Turntide':
-        motor_field.selectbox("Model", turntide_motors, key = "Motor Model")
-
-    elif st.session_state["Motor Manufacturer"] == 'Yasa':
-        motor_field.selectbox("Model", yasa_motors, key = "Motor Model")
-
-    elif st.session_state["Motor Manufacturer"] == 'Intergral Powertrain':
-        motor_field.selectbox("Model", ipt_motors, key = "Motor Model")
-
-    elif st.session_state["Motor Manufacturer"] == 'Other':
-        motor_field.text_input("Model")
-
-    motor_field.selectbox("Sample", samples, key = "Motor Sample")
-    motor_field.text_area("Notes", key = "Motor Notes")
-
     return
