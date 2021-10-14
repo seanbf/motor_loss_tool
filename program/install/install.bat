@@ -2,8 +2,8 @@
 cls
 :start
 SET "ThisScriptsDirectory=%~dp0\\..\\.."
-SET AppName=Torque Accuracy Tool
-SET FileName=torque_accuracy_tool
+SET AppName=Motor Loss Tool
+SET FileName=motor_loss_tool
 ECHO.
 ECHO ##### %AppName% Install #####
 ECHO. 
